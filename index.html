@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartBlinds</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f7f6f2;--surface:#fff;--border:#e5e2d9;--text:#1a1916;--muted:#6b6860;
+  --accent:#c8491a;--accent-light:#fdf0eb;--accent-dark:#9e3512;
+  --success:#1a7a4a;--success-bg:#edf7f2;--danger:#c8191a;--danger-bg:#fdedf0;
+  --sidebar-w:240px;--radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+button,input,select,textarea{font-family:'DM Sans',sans-serif;cursor:pointer}
+
+
+/* Fields */
+.field-label{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;display:block;letter-spacing:.04em;text-transform:uppercase}
+.field-wrap{margin-bottom:14px}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border .15s}
+.inp:focus{border-color:var(--accent)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--radius);border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-dark)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:var(--bg)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid #f5c6c7}.btn-danger:hover{background:#fbd7d8}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-full{width:100%;justify-content:center}
+
+/* Layout */
+#app{display:flex;height:100dvh;flex-direction:column}
+.app-inner{display:flex;flex:1;overflow:hidden}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;flex-shrink:0}
+.sidebar-brand{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.sidebar-brand h1{font-size:18px;font-weight:600}.sidebar-brand h1 span{color:var(--accent)}
+.sidebar-brand p{font-size:11px;color:var(--muted);margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;margin:2px 8px;border-radius:var(--radius);cursor:pointer;color:var(--muted);font-size:14px;font-weight:500;transition:all .15s;border:none;background:transparent;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent)}
+.nav-icon{width:18px;height:18px;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar-footer p{font-size:12px;color:var(--muted)}
+.sidebar-footer strong{color:var(--text);display:block}
+.main{flex:1;overflow-y:auto;padding:28px;background:var(--bg)}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-header h2{font-size:20px;font-weight:600}
+.page-header p{font-size:13px;color:var(--muted);margin-top:3px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* Stats */
+.stat{background:var(--bg);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-val{font-size:22px;font-weight:600}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Quote */
+.quote-badge{font-family:'DM Mono',monospace;font-size:13px;background:var(--accent-light);color:var(--accent);padding:4px 10px;border-radius:6px;font-weight:500}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+.tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--bg)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.empty-icon{font-size:28px;margin-bottom:8px}
+
+/* Badge */
+.badge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.badge-success{background:var(--success-bg);color:var(--success)}
+.badge-pending{background:#fef8ec;color:#9a6e00}
+
+/* Products */
+.product-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;background:var(--bg)}
+.product-row .pname{flex:1;font-weight:500}
+.product-row .pprice{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)}
+
+/* Action bar */
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+
+/* Totals */
+.totals-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.totals-row.grand{border-top:2px solid var(--text);margin-top:4px;padding-top:14px}
+.totals-row.grand .tot-label{font-weight:600;font-size:15px}
+.totals-row.grand .tot-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:var(--accent)}
+.tot-label{font-size:13px;color:var(--muted)}
+.tot-val{font-size:14px;font-family:'DM Mono',monospace;font-weight:500}
+
+/* Demo banner */
+.demo-banner{background:#1a1916;color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.demo-tag{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase}
+.demo-count{font-family:'DM Mono',monospace;color:#facc15}
+
+/* Demo usage widget */
+.demo-usage{margin:12px 8px 0;background:var(--accent-light);border-radius:var(--radius);padding:10px 14px}
+.demo-usage-label{font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.demo-bar{height:5px;background:#e5e2d9;border-radius:3px;overflow:hidden;margin-bottom:5px}
+.demo-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.demo-usage-text{font-size:11px;color:var(--muted)}
+
+/* Lock screen */
+#lockScreen{display:none;position:fixed;inset:0;background:rgba(15,15,14,.92);z-index:200;align-items:center;justify-content:center}
+#lockScreen.open{display:flex}
+.lock-card{background:var(--surface);border-radius:var(--radius-lg);padding:36px 32px;width:360px;text-align:center;border:1px solid var(--border)}
+.lock-icon{font-size:40px;margin-bottom:12px}
+.lock-card h2{font-size:20px;font-weight:600;margin-bottom:8px}
+.lock-card p{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.lock-contact{background:var(--accent-light);border-radius:var(--radius);padding:14px;margin-bottom:20px;text-align:left}
+.lock-contact p{font-size:13px;color:var(--accent-dark);margin:3px 0;font-weight:500}
+.lock-contact p span{font-weight:400;color:var(--muted)}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;opacity:0;transition:opacity .2s;z-index:999;pointer-events:none}
+#toast.show{opacity:1}
+
+/* Modal */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+#modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:24px;width:380px;border:1px solid var(--border)}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* Mobile bottom nav */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:50;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav-inner{display:flex;justify-content:space-around;align-items:stretch}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;gap:3px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:500;cursor:pointer;transition:color .15s}
+.bnav-item.active{color:var(--accent)}
+.bnav-item svg{width:20px;height:20px}
+.bnav-label{font-size:10px;line-height:1}
+
+/* Mobile */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .bottom-nav{display:block}
+  #app{height:100dvh}
+  .main{padding:16px;padding-bottom:80px}
+  .login-card{width:92vw;padding:28px 20px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .card{padding:14px}
+  .action-bar{flex-direction:column}
+  .action-bar .btn{width:100%;justify-content:center}
+  #sales .grid-4{grid-template-columns:1fr 1fr}
+  .lock-card{width:88vw;padding:28px 20px}
+  #toast{bottom:72px;right:12px;left:12px;text-align:center}
+  .demo-banner{font-size:12px;padding:8px 12px}
+}
+@media(max-width:400px){.stat-val{font-size:18px}.card{padding:12px}}
+</style>
+</head>
+<body>
+
+<!-- App -->
+<div id="app" style="display:flex;flex-direction:column;height:100dvh">
+  <!-- Demo banner -->
+  <div class="demo-banner">
+    <span class="demo-tag">Demo</span>
+    You are using the demo version of SmartBlinds &nbsp;·&nbsp;
+    <span class="demo-count" id="demoCountDisplay">0 / 5 quotes used</span>
+    &nbsp;·&nbsp; Contact us to unlock the full version
+  </div>
+
+  <div class="app-inner">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <h1>Smart<span>Blinds</span></h1>
+        <p id="bizName">My Blinds Business</p>
+      </div>
+      <button class="nav-item active" id="nav-billing">New Quote</button>
+      <button class="nav-item" id="nav-sales">Sales History</button>
+      <button class="nav-item" id="nav-products">Products</button>
+      <button class="nav-item" id="nav-settings">Settings</button>
+      <div class="demo-usage">
+        <div class="demo-usage-label">Demo usage</div>
+        <div class="demo-bar"><div class="demo-bar-fill" id="demoBarFill" style="width:0%"></div></div>
+        <div class="demo-usage-text" id="demoUsageText">0 of 5 quotes used</div>
+      </div>
+      <div class="sidebar-footer">
+        <p><strong id="sidebarUser">SmartBlinds</strong>Business POS</p>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- BILLING -->
+      <div id="billing" class="page active">
+        <div class="page-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div><h2>New Quote</h2><p>Build and send a customer quote</p></div>
+            <span class="quote-badge" id="quoteDisplay">QUOTE #—</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Customer details</div>
+            <div class="field-wrap"><label class="field-label">Full name</label><input class="inp" id="custName" placeholder="e.g. John Dlamini"/></div>
+            <div class="field-wrap"><label class="field-label">Phone number</label><input class="inp" id="custPhone" placeholder="e.g. 082 555 1234"/></div>
+            <div class="field-wrap"><label class="field-label">Email (optional)</label><input class="inp" id="custEmail" placeholder="john@email.com"/></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Add item</div>
+            <div class="field-wrap"><label class="field-label">Product</label><select class="inp" id="productSel"></select></div>
+            <div class="grid-3" style="margin-bottom:10px">
+              <div><label class="field-label">Width (m)</label><input class="inp" id="blength" placeholder="1.2" type="number" step="0.01" min="0"/></div>
+              <div><label class="field-label">Height (m)</label><input class="inp" id="bbreadth" placeholder="1.8" type="number" step="0.01" min="0"/></div>
+              <div><label class="field-label">Qty</label><input class="inp" id="bqty" placeholder="1" type="number" min="1"/></div>
+            </div>
+            <div id="itemPreview" style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:18px"></div>
+            <button class="btn btn-primary" id="addItemBtn">+ Add to quote</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quote items</div>
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr><th>Product</th><th>Dimensions</th><th>m²</th><th>Qty</th><th>Rate/m²</th><th>Total</th><th></th></tr></thead>
+              <tbody id="itemsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Totals</div>
+            <div class="totals-row"><span class="tot-label">Subtotal</span><span class="tot-val">R <span id="subTotal">0.00</span></span></div>
+            <div class="totals-row grand"><span class="tot-label">Grand total</span><span class="tot-val">R <span id="grandTotal">0.00</span></span></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Actions</div>
+            <div class="action-bar">
+              <button class="btn btn-primary" id="generateBtn">✓ Generate quote</button>
+              <button class="btn btn-secondary" id="pdfBtn">↓ Download PDF</button>
+              <button class="btn btn-secondary" id="waBtn">📲 WhatsApp</button>
+              <button class="btn btn-danger btn-sm" id="clearBtn">Clear cart</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALES -->
+      <div id="sales" class="page">
+        <div class="page-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div><h2>Sales history</h2><p>All generated quotes</p></div>
+            <button class="btn btn-danger btn-sm" id="clearHistoryBtn">Clear history</button>
+          </div>
+        </div>
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="stat"><div class="stat-val" id="statCount">0</div><div class="stat-lbl">Total quotes</div></div>
+          <div class="stat"><div class="stat-val" id="statRev">R0</div><div class="stat-lbl">Total revenue</div></div>
+          <div class="stat"><div class="stat-val" id="statAvg">R0</div><div class="stat-lbl">Avg. quote</div></div>
+          <div class="stat"><div class="stat-val" id="statToday">0</div><div class="stat-lbl">Quotes today</div></div>
+        </div>
+        <div class="card">
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr><th>Quote #</th><th>Date</th><th>Customer</th><th>Phone</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody id="salesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div id="products" class="page">
+        <div class="page-header"><h2>Products</h2><p>Manage your blind types and pricing</p></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Add product</div>
+            <div class="field-wrap"><label class="field-label">Product name</label><input class="inp" id="pName" placeholder="e.g. Blackout Roller"/></div>
+            <div class="field-wrap"><label class="field-label">Price per m² (R)</label><input class="inp" id="pPrice" placeholder="e.g. 350" type="number" min="0"/></div>
+            <button class="btn btn-primary" id="addProductBtn">+ Add product</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Product list</div>
+            <div id="productList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="settings" class="page">
+        <div class="page-header"><h2>Settings</h2><p>Business information used on quotes and PDFs</p></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Business details</div>
+            <div class="field-wrap"><label class="field-label">Business name</label><input class="inp" id="bName" placeholder="SmartBlinds Joburg"/></div>
+            <div class="field-wrap"><label class="field-label">Phone</label><input class="inp" id="bPhone" placeholder="011 555 1234"/></div>
+            <div class="field-wrap"><label class="field-label">Email</label><input class="inp" id="bEmail" placeholder="info@smartblinds.co.za"/></div>
+            <div class="field-wrap"><label class="field-label">Address</label><input class="inp" id="bAddr" placeholder="12 Main St, Johannesburg"/></div>
+            <div class="field-wrap"><label class="field-label">Admin password</label><input class="inp" id="bPass" type="password" placeholder="Change login password"/></div>
+            <button class="btn btn-primary" id="saveBizBtn">Save settings</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Quote settings</div>
+            <div class="field-wrap"><label class="field-label">Quote terms / notes</label><textarea class="inp" id="bTerms" rows="3" placeholder="e.g. Quote valid for 30 days. 50% deposit required."></textarea></div>
+            <div class="field-wrap"><label class="field-label">Thank you message (bottom of PDF)</label><textarea class="inp" id="bThankYou" rows="3" placeholder="e.g. Thank you for choosing SmartBlinds! We appreciate your business."></textarea></div>
+            <div class="field-wrap"><label class="field-label">Next quote number</label><input class="inp" id="bQuoteStart" type="number" placeholder="1001"/></div>
+            <button class="btn btn-primary" id="saveQuoteBtn">Save</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main -->
+  </div><!-- end app-inner -->
+
+  <!-- Mobile bottom nav -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="bnav-item active" id="bnav-billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="bnav-label">Quote</span></button>
+      <button class="bnav-item" id="bnav-sales"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M3 10h18v4H3z"/><path d="M3 17h18v4H3z"/></svg><span class="bnav-label">Sales</span></button>
+      <button class="bnav-item" id="bnav-products"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg><span class="bnav-label">Products</span></button>
+      <button class="bnav-item" id="bnav-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="bnav-label">Settings</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Lock screen -->
+<div id="lockScreen">
+  <div class="lock-card">
+	<div style="margin-bottom: 20px;">
+        <h1 style="font-size: 18px; font-weight: 600;">Local<span>Lift</span> ZA</h1>
+        <p style="font-size: 10px; color: var(--success); font-weight: 700; text-transform: uppercase;">We Lift Local Businesses</p>
+    </div>
+    <div class="lock-icon">🔒</div>
+    <h2>Demo limit reached</h2>
+    <p>You have used all 5 demo quotes. Contact us to unlock the full version of SmartBlinds and keep growing your business.</p>
+    <div class="lock-contact">
+      <p>📞 <a href="tel:+27638557681" style="color:var(--accent-dark);font-weight:500;text-decoration:none" id="lockPhone">063 855 7681</a></p>
+      <p>✉️ <a href="mailto:locallift.za@gmail.com" style="color:var(--accent-dark);font-weight:500;text-decoration:none" id="lockEmail">locallift.za@gmail.com</a></p>
+    </div>
+    <button class="btn btn-primary btn-full" id="unlockWaBtn">📲 WhatsApp us to unlock</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Confirm</h3>
+    <p id="modalMsg" style="font-size:14px;color:var(--muted)"></p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── State ── */
+var items = [];
+var generated = false;
+var sales = JSON.parse(localStorage.getItem('sb_sales') || '[]');
+var products = JSON.parse(localStorage.getItem('sb_products') || '[]');
+var biz = JSON.parse(localStorage.getItem('sb_biz') || '{}');
+var quoteNum = parseInt(localStorage.getItem('sb_quote') || '1000');
+var DEMO_LIMIT = 5;
+
+/* ── Wire up all buttons via JS (no inline onclick) ── */
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('addItemBtn').addEventListener('click', addItem);
+  document.getElementById('generateBtn').addEventListener('click', generateQuote);
+  document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
+  document.getElementById('waBtn').addEventListener('click', sendWhatsApp);
+  document.getElementById('clearBtn').addEventListener('click', clearCart);
+  document.getElementById('clearHistoryBtn').addEventListener('click', function(){ if(confirm('Delete ALL sales history?')){ sales=[]; saveSales(); renderSales(); toast('History cleared'); } });
+  document.getElementById('addProductBtn').addEventListener('click', addProduct);
+  document.getElementById('saveBizBtn').addEventListener('click', saveBusiness);
+  document.getElementById('saveQuoteBtn').addEventListener('click', saveQuoteSettings);
+  document.getElementById('unlockWaBtn').addEventListener('click', sendWhatsAppUnlock);
+  document.getElementById('modalCancelBtn').addEventListener('click', function(){ document.getElementById('modal-overlay').classList.remove('open'); });
+
+  // Sidebar nav
+  ['billing','sales','products','settings'].forEach(function(page){
+    document.getElementById('nav-'+page).addEventListener('click', function(){ nav(page); });
+    document.getElementById('bnav-'+page).addEventListener('click', function(){ nav(page); });
+  });
+
+  // Live preview
+  ['blength','bbreadth','bqty','productSel'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+
+  // Auto-start app (no login on demo)
+  init();
+});
+
+
+
+/* ── Init ── */
+function init() {
+  if (products.length === 0) {
+    products = [{name:'Roller Blind',price:200},{name:'Venetian Blind',price:280},{name:'Blackout Roller',price:350}];
+    saveProducts();
+  }
+  loadBizSettings();
+  loadProducts();
+  loadQuoteNum();
+  renderSales();
+  renderProductList();
+  renderItems();
+  updateDemoUI();
+  if (sales.length >= DEMO_LIMIT) showLockScreen();
+}
+
+/* ── Nav ── */
+function nav(page) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  ['billing','sales','products','settings'].forEach(function(p){
+    document.getElementById('nav-'+p).classList.toggle('active', p===page);
+    document.getElementById('bnav-'+p).classList.toggle('active', p===page);
+  });
+  document.getElementById(page).classList.add('active');
+  document.querySelector('.main').scrollTo(0,0);
+}
+
+/* ── Business settings ── */
+function loadBizSettings() {
+  document.getElementById('bizName').textContent = biz.name || 'My Blinds Business';
+  document.getElementById('sidebarUser').textContent = biz.name || 'SmartBlinds';
+  if (biz.name) document.getElementById('bName').value = biz.name;
+  if (biz.phone) document.getElementById('bPhone').value = biz.phone;
+  if (biz.email) document.getElementById('bEmail').value = biz.email;
+  if (biz.addr) document.getElementById('bAddr').value = biz.addr;
+  if (biz.terms) document.getElementById('bTerms').value = biz.terms;
+  if (biz.thankYou) document.getElementById('bThankYou').value = biz.thankYou;
+  if (biz.quoteStart) document.getElementById('bQuoteStart').value = biz.quoteStart;
+}
+function saveBusiness() {
+  biz.name = document.getElementById('bName').value.trim() || biz.name;
+  biz.phone = document.getElementById('bPhone').value.trim();
+  biz.email = document.getElementById('bEmail').value.trim();
+  biz.addr = document.getElementById('bAddr').value.trim();
+  var np = document.getElementById('bPass').value;
+  if (np) biz.password = np;
+  localStorage.setItem('sb_biz', JSON.stringify(biz));
+  loadBizSettings();
+  toast('Settings saved');
+}
+function saveQuoteSettings() {
+  biz.terms = document.getElementById('bTerms').value;
+  biz.thankYou = document.getElementById('bThankYou').value;
+  var qs = parseInt(document.getElementById('bQuoteStart').value);
+  if (!isNaN(qs)) { quoteNum = qs; localStorage.setItem('sb_quote', quoteNum); }
+  localStorage.setItem('sb_biz', JSON.stringify(biz));
+  loadQuoteNum();
+  toast('Quote settings saved');
+}
+
+/* ── Quote number ── */
+function loadQuoteNum() {
+  document.getElementById('quoteDisplay').textContent = 'QUOTE #' + quoteNum;
+}
+
+/* ── Products ── */
+function loadProducts() {
+  var sel = document.getElementById('productSel');
+  sel.innerHTML = '';
+  products.forEach(function(p){
+    var o = document.createElement('option');
+    o.value = p.name;
+    o.textContent = p.name + '  —  R ' + p.price + '/m²';
+    sel.appendChild(o);
+  });
+}
+function addProduct() {
+  var name = document.getElementById('pName').value.trim();
+  var price = parseFloat(document.getElementById('pPrice').value);
+  if (!name || isNaN(price) || price <= 0) { toast('Enter a valid name and price'); return; }
+  if (products.find(function(p){ return p.name.toLowerCase()===name.toLowerCase(); })) { toast('Product already exists'); return; }
+  products.push({name:name, price:price});
+  saveProducts(); loadProducts(); renderProductList();
+  document.getElementById('pName').value = '';
+  document.getElementById('pPrice').value = '';
+  toast('"' + name + '" added');
+}
+function removeProduct(name) {
+  products = products.filter(function(p){ return p.name !== name; });
+  saveProducts(); loadProducts(); renderProductList();
+  toast('Product removed');
+}
+function saveProducts() { localStorage.setItem('sb_products', JSON.stringify(products)); }
+function renderProductList() {
+  var el = document.getElementById('productList');
+  if (products.length === 0) { el.innerHTML = '<div class="empty-state">No products yet</div>'; return; }
+  el.innerHTML = '';
+  products.forEach(function(p){
+    var row = document.createElement('div');
+    row.className = 'product-row';
+    row.innerHTML = '<span class="pname">' + p.name + '</span><span class="pprice">R ' + p.price + '/m\u00B2</span>';
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-danger btn-sm';
+    btn.textContent = 'Remove';
+    btn.addEventListener('click', function(){ removeProduct(p.name); });
+    row.appendChild(btn);
+    el.appendChild(row);
+  });
+}
+
+/* ── Preview ── */
+function updatePreview() {
+  var l = parseFloat(document.getElementById('blength').value);
+  var b = parseFloat(document.getElementById('bbreadth').value);
+  var q = parseInt(document.getElementById('bqty').value) || 1;
+  var pName = document.getElementById('productSel').value;
+  var p = products.find(function(x){ return x.name===pName; });
+  var el = document.getElementById('itemPreview');
+  if (!l || !b || !p) { el.textContent = ''; return; }
+  el.textContent = (l*b).toFixed(2) + ' m\u00B2 \u00D7 R' + p.price + '/m\u00B2 \u00D7 ' + q + ' = R ' + (l*b*p.price*q).toFixed(2);
+}
+
+/* ── Cart ── */
+function addItem() {
+  var l = parseFloat(document.getElementById('blength').value);
+  var b = parseFloat(document.getElementById('bbreadth').value);
+  var q = parseInt(document.getElementById('bqty').value);
+  if (!l || !b || !q || q < 1) { toast('Enter valid dimensions and quantity'); return; }
+  var pName = document.getElementById('productSel').value;
+  var p = products.find(function(x){ return x.name===pName; });
+  if (!p) { toast('Select a product'); return; }
+  var area = parseFloat((l*b).toFixed(4));
+  var total = parseFloat((area*p.price*q).toFixed(2));
+  items.push({name:p.name, width:l, height:b, area:area, qty:q, price:p.price, total:total});
+  generated = false;
+  renderItems();
+  document.getElementById('blength').value='';
+  document.getElementById('bbreadth').value='';
+  document.getElementById('bqty').value='';
+  document.getElementById('itemPreview').textContent='';
+  toast('Item added to quote');
+}
+function removeItem(idx) {
+  items.splice(idx,1);
+  generated = false;
+  renderItems();
+}
+function renderItems() {
+  var tbody = document.getElementById('itemsBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '';
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.colSpan = 7;
+    td.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCCB</div>No items yet \u2014 add a product above</div>';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    setTotals(0); return;
+  }
+  tbody.innerHTML = '';
+  var gt = 0;
+  items.forEach(function(item, idx){
+    gt += item.total;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><strong>' + item.name + '</strong></td>' +
+      '<td>' + item.width + 'm \u00D7 ' + item.height + 'm</td>' +
+      '<td>' + item.area.toFixed(2) + ' m\u00B2</td>' +
+      '<td>' + item.qty + '</td>' +
+      '<td>R ' + item.price + '/m\u00B2</td>' +
+      '<td><strong>R ' + item.total.toFixed(2) + '</strong></td><td></td>';
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-danger btn-sm';
+    btn.textContent = '\u2715';
+    (function(i){ btn.addEventListener('click', function(){ removeItem(i); }); })(idx);
+    tr.cells[6].appendChild(btn);
+    tbody.appendChild(tr);
+  });
+  setTotals(gt);
+}
+function setTotals(gt) {
+  document.getElementById('subTotal').textContent = gt.toFixed(2);
+  document.getElementById('grandTotal').textContent = gt.toFixed(2);
+}
+function clearCart() {
+  items=[]; generated=false;
+  document.getElementById('custName').value='';
+  document.getElementById('custPhone').value='';
+  document.getElementById('custEmail').value='';
+  renderItems(); loadQuoteNum();
+  toast('Cart cleared');
+}
+
+/* ── Generate ── */
+function generateQuote() {
+  if (items.length === 0) { toast('Add at least one item first'); return; }
+  if (generated) { toast('Quote already generated \u2014 clear to start a new one'); return; }
+  if (sales.length >= DEMO_LIMIT) { showLockScreen(); return; }
+  quoteNum++;
+  localStorage.setItem('sb_quote', quoteNum);
+  document.getElementById('quoteDisplay').textContent = 'QUOTE #' + quoteNum;
+  var total = parseFloat(document.getElementById('grandTotal').textContent);
+  sales.push({
+    quote:quoteNum,
+    date:new Date().toLocaleDateString('en-ZA'),
+    customer:document.getElementById('custName').value||'Walk-in',
+    phone:document.getElementById('custPhone').value||'\u2014',
+    items:items.length, total:total, status:'pending'
+  });
+  saveSales(); renderSales(); updateDemoUI();
+  generated = true;
+  toast('Quote #' + quoteNum + ' generated successfully');
+  if (sales.length >= DEMO_LIMIT) showLockScreen();
+}
+function saveSales() { localStorage.setItem('sb_sales', JSON.stringify(sales)); }
+
+/* ── Sales ── */
+function renderSales() {
+  var tbody = document.getElementById('salesBody');
+  tbody.innerHTML = '';
+  if (sales.length === 0) {
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.colSpan = 7;
+    td.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCCA</div>No sales recorded yet</div>';
+    tr.appendChild(td); tbody.appendChild(tr);
+  } else {
+    var sorted = sales.slice().reverse();
+    sorted.forEach(function(s){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td><span class="quote-badge" style="font-size:11px">Q' + s.quote + '</span></td>' +
+        '<td>' + s.date + '</td><td><strong>' + s.customer + '</strong></td><td>' + s.phone + '</td>' +
+        '<td>' + s.items + ' item' + (s.items!==1?'s':'') + '</td>' +
+        '<td><strong>R ' + parseFloat(s.total).toFixed(2) + '</strong></td>' +
+        '<td><span class="badge badge-' + (s.status==='pending'?'pending':'success') + '">' + s.status + '</span></td>';
+      tbody.appendChild(tr);
+    });
+  }
+  var total = sales.reduce(function(a,s){ return a+parseFloat(s.total); },0);
+  var avg = sales.length ? total/sales.length : 0;
+  var today = new Date().toLocaleDateString('en-ZA');
+  var todayCount = sales.filter(function(s){ return s.date===today; }).length;
+  document.getElementById('statCount').textContent = sales.length;
+  document.getElementById('statRev').textContent = 'R' + total.toLocaleString('en-ZA',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('statAvg').textContent = 'R' + avg.toLocaleString('en-ZA',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('statToday').textContent = todayCount;
+}
+
+/* ── PDF ── */
+function downloadPDF() {
+  if (items.length === 0) { toast('No items in cart'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF();
+  var q = generated ? quoteNum : '(Draft)';
+  var gt = document.getElementById('grandTotal').textContent;
+  var y = 20;
+
+  // Header bar
+  doc.setFillColor(200,73,26);
+  doc.rect(0,0,210,36,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text(biz.name||'SmartBlinds',14,15);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  if(biz.phone) doc.text(biz.phone,14,22);
+  if(biz.email) doc.text(biz.email,14,28);
+  if(biz.addr) doc.text(biz.addr,14,34);
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('QUOTE #'+q,140,18);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(new Date().toLocaleDateString('en-ZA'),140,26);
+
+  y = 50;
+  // Customer
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('BILL TO',14,y);
+  doc.setFont('helvetica','normal');
+  var cn = document.getElementById('custName').value||'Customer';
+  var cp = document.getElementById('custPhone').value;
+  var ce = document.getElementById('custEmail').value;
+  doc.text(cn,14,y+6);
+  if(cp) doc.text(cp,14,y+12);
+  if(ce) doc.text(ce,14,y+18);
+  y += 30;
+
+  // Table header
+  doc.setFillColor(242,241,238);
+  doc.rect(14,y,182,8,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text('Product',16,y+5.5);
+  doc.text('Dimensions',65,y+5.5);
+  doc.text('m\u00B2',105,y+5.5);
+  doc.text('Qty',120,y+5.5);
+  doc.text('Rate/m\u00B2',135,y+5.5);
+  doc.text('Total',170,y+5.5);
+  y += 12;
+
+  doc.setFont('helvetica','normal');
+  items.forEach(function(item,idx){
+    if(idx%2===0){ doc.setFillColor(252,251,249); doc.rect(14,y-3,182,8,'F'); }
+    doc.text(item.name,16,y+2);
+    doc.text(item.width+'m \u00D7 '+item.height+'m',65,y+2);
+    doc.text(item.area.toFixed(2),105,y+2);
+    doc.text(String(item.qty),122,y+2);
+    doc.text('R '+item.price,135,y+2);
+    doc.text('R '+item.total.toFixed(2),170,y+2);
+    y += 10;
+  });
+
+  y += 6;
+  doc.setDrawColor(200,73,26); doc.setLineWidth(0.5);
+  doc.line(130,y,196,y);
+  y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.text('TOTAL',135,y);
+  doc.text('R '+gt,170,y);
+
+  // Terms
+  if(biz.terms){
+    y += 20;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text('TERMS & CONDITIONS',14,y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    var tlines = doc.splitTextToSize(biz.terms,182);
+    doc.text(tlines,14,y+5);
+  }
+
+  // Thank you note pinned to bottom
+  var pageH = doc.internal.pageSize.height;
+  var tyMsg = biz.thankYou || 'Thank you for your business! We look forward to working with you.';
+  doc.setDrawColor(200,73,26); doc.setLineWidth(0.4);
+  doc.line(14,pageH-24,196,pageH-24);
+  doc.setFillColor(200,73,26);
+  doc.rect(14,pageH-22,182,14,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','italic'); doc.setFontSize(9);
+  var tyLines = doc.splitTextToSize(tyMsg,174);
+  doc.text(tyLines,105,pageH-16,{align:'center'});
+  doc.setTextColor(0,0,0);
+
+  doc.save('Quote_'+q+'_'+(cn.replace(/\s+/g,'_'))+'.pdf');
+  toast('PDF downloaded');
+}
+
+/* ── WhatsApp ── */
+function sendWhatsApp() {
+  if(items.length===0){ toast('No items in cart'); return; }
+  var p = document.getElementById('custPhone').value.replace(/[^0-9]/g,'');
+  if(p.startsWith('0')) p='27'+p.slice(1);
+  var cn = document.getElementById('custName').value||'there';
+  var bizName = biz.name||'SmartBlinds';
+  var q = generated ? quoteNum : '(Draft)';
+  var gt = document.getElementById('grandTotal').textContent;
+  var lines = items.map(function(i){ return '  \u2022 '+i.name+' ('+i.width+'\u00D7'+i.height+'m \u00D7 '+i.qty+') \u2014 R '+i.total.toFixed(2); }).join('\n');
+  var msg = 'Hi '+cn+',\n\nThank you for your interest in '+bizName+'!\n\nQuote Q'+q+':\n\n'+lines+'\n\n*TOTAL: R '+gt+'*\n\n'+(biz.terms||'Quote valid for 30 days.')+'\n\nKind regards,\n'+bizName+(biz.phone?'\n'+biz.phone:'');
+  window.open('https://wa.me/'+p+'?text='+encodeURIComponent(msg));
+}
+
+/* ── Demo mode ── */
+function updateDemoUI() {
+  var used = sales.length;
+  var pct = Math.min((used/DEMO_LIMIT)*100,100);
+  var remaining = Math.max(DEMO_LIMIT-used,0);
+  document.getElementById('demoCountDisplay').textContent = used+' / '+DEMO_LIMIT+' quotes used';
+  document.getElementById('demoBarFill').style.width = pct+'%';
+  document.getElementById('demoUsageText').textContent = used+' of '+DEMO_LIMIT+' quotes used \u00B7 '+remaining+' remaining';
+  var lp = document.getElementById('lockPhone');
+  var le = document.getElementById('lockEmail');
+  if(lp){ lp.textContent = '063 855 7681'; lp.href = 'tel:+27638557681'; }
+  if(le){ le.textContent = 'locallift.za@gmail.com'; le.href = 'mailto:locallift.za@gmail.com'; }
+}
+function showLockScreen() {
+  updateDemoUI();
+  document.getElementById('lockScreen').classList.add('open');
+}
+function sendWhatsAppUnlock() {
+  var ownerNumber = '27638557681';
+  var msg = 'Hi! I have been using the SmartBlinds demo and I would like to unlock the full version. Please assist.';
+  window.open('https://wa.me/'+ownerNumber+'?text='+encodeURIComponent(msg));
+}
+
+/* ── Toast ── */
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2500);
+}
+</script>
+</body>
+</html>

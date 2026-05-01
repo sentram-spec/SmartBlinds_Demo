@@ -326,7 +326,7 @@ button,input,select,textarea{font-family:'DM Sans',sans-serif;cursor:pointer}
                   <p>&#128205; Johannesburg, South Africa</p>
                   <p>&#128222; <a href="tel:+27638557681">063 855 7681</a></p>
                   <p>&#9993;&#65039; <a href="mailto:locallift.za@gmail.com">locallift.za@gmail.com</a></p>
-                  <p>&#128242; <a href="https://wa.me/27638557681?text=Hi Local Lift ZA, Can you help me?." target="_blank">WhatsApp us</a></p>
+                  <p>&#128242; <a href="https://wa.me/27638557681?text=Hi%20LocalLift%20ZA,%20I%20need%20support." target="_blank" style="text-decoration: none; color: #25D366; font-weight: bold;">WhatsApp us</a></p>
                 </div>
               </div>
             </div>
@@ -346,6 +346,7 @@ button,input,select,textarea{font-family:'DM Sans',sans-serif;cursor:pointer}
 
 <div id="lockScreen">
   <div class="lock-card">
+	<div style="font-weight:bold; font-size:1.2rem; color:var(--gold-dark); margin-bottom:10px;">Local Lift ZA</div>
     <div class="lock-icon">&#128274;</div>
     <h2>Demo limit reached</h2>
     <p>You have used all 5 demo quotes. Contact us to unlock the full version.</p>
@@ -737,13 +738,13 @@ function downloadPDF() {
   var gt=document.getElementById('grandTotal').textContent;
   var bizName=biz.name||'LocalLift ZA'; var bizPhone=biz.phone||'063 855 7681';
   var bizEmail=biz.email||'locallift.za@gmail.com'; var bizAddr=biz.addr||'Johannesburg, South Africa';
-  doc.setFillColor(27,47,110); doc.rect(0,0,210,36,'F');
-  doc.setFillColor(184,151,42); doc.rect(0,34,210,3,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.text(bizName,14,15);
-  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.text(bizPhone,14,22); doc.text(bizEmail,14,28); doc.text(bizAddr,14,34);
-  doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.text('QUOTE #'+q,140,18);
-  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.text(new Date().toLocaleDateString('en-ZA'),140,26);
-  var y=50; doc.setTextColor(0,0,0); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text('BILL TO',14,y); doc.setFont('helvetica','normal');
+  doc.setFillColor(27,47,110); doc.rect(0,0,210,46,'F');
+  doc.setFillColor(184,151,42); doc.rect(0,44,210,3,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.text(bizName,14,13);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.text(bizPhone,14,21); doc.text(bizEmail,14,28); doc.text(bizAddr,14,35);
+  doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.text('QUOTE #'+q,140,16);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.text(new Date().toLocaleDateString('en-ZA'),140,24);
+  var y=58; doc.setTextColor(0,0,0); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text('BILL TO',14,y); doc.setFont('helvetica','normal');
   var cn=document.getElementById('custName').value||'Customer'; var cp=document.getElementById('custPhone').value; var ce=document.getElementById('custEmail').value;
   doc.text(cn,14,y+6); if(cp) doc.text(cp,14,y+12); if(ce) doc.text(ce,14,y+18); y+=30;
   doc.setFillColor(27,47,110); doc.rect(14,y,182,8,'F');
